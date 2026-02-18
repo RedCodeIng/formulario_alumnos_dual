@@ -54,14 +54,19 @@ def render_login():
                             student = res.data[0]
                             # 2. Check Password (CURP)
                             if student.get("curp") == curp:
-                                st.session_state["authenticated"] = True
-                                st.session_state["user"] = student
-                                st.session_state["role"] = "student"
-                                st.session_state["selected_career"] = selected_career_name
-                                st.session_state["selected_career_id"] = selected_career_id
-                                st.success(f"Bienvenido al Portal DUAL - {selected_career_name}")
-                                time.sleep(1)
-                                st.rerun()
+                                # 2.1 Enforce Career Match (Fix Loophole)
+                                student_career_id = student.get("carrera_id")
+                                if student_career_id and student_career_id != selected_career_id:
+                                    st.error("Usted está registrado en otra carrera. Por favor seleccione la carrera correcta en el menú.")
+                                else:
+                                    st.session_state["authenticated"] = True
+                                    st.session_state["user"] = student
+                                    st.session_state["role"] = "student"
+                                    st.session_state["selected_career"] = selected_career_name
+                                    st.session_state["selected_career_id"] = selected_career_id
+                                    st.success(f"Bienvenido al Portal DUAL - {selected_career_name}")
+                                    time.sleep(1)
+                                    st.rerun()
                             else:
                                 st.error("CURP incorrecta.")
                         else:
