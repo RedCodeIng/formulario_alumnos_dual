@@ -1,5 +1,13 @@
 
 import streamlit as st
+import sys
+import os
+
+# Fix for Streamlit Cloud path resolution
+# Adds the parent directory of 'src' to sys.path so 'src.views' can be imported
+current_dir = os.path.dirname(os.path.abspath(__file__))
+parent_dir = os.path.dirname(current_dir)
+sys.path.insert(0, parent_dir)
 from src.views.auth import render_login
 from src.views.dashboard import render_dashboard
 from src.views.student_dashboard import render_student_dashboard
