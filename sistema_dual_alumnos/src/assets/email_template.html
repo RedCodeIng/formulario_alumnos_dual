@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        body { font-family: Arial, sans-serif; background-color: #f4f4f4; margin: 0; padding: 0; }
+        .container { max-width: 600px; margin: 20px auto; background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
+        .header { background-color: #7f1d35; color: #ffffff; padding: 20px; text-align: center; }
+        .header h1 { margin: 0; font-size: 24px; }
+        .content { padding: 30px; color: #333333; }
+        .info-table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+        .info-table td { padding: 10px; border-bottom: 1px solid #eeeeee; }
+        .label { font-weight: bold; color: #7f1d35; width: 40%; }
+        .button-container { text-align: center; margin-top: 30px; }
+        .button { background-color: #eeb30b; color: #333333; padding: 12px 24px; text-decoration: none; border-radius: 4px; font-weight: bold; display: inline-block; }
+        .footer { background-color: #333333; color: #cccccc; text-align: center; padding: 15px; font-size: 12px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Confirmación de Registro</h1>
+            <p>Sistema de Gestión DUAL</p>
+        </div>
+        <div class="content">
+            <p>Hola <strong>{{nombre}}</strong>,</p>
+            <p>Se ha registrado exitosamente tu inscripción al programa DUAL. A continuación encontrarás un resumen de tus datos:</p>
+            
+            <table class="info-table">
+                <tr>
+                    <td class="label">Matrícula:</td>
+                    <td>{{matricula}}</td>
+                </tr>
+                <tr>
+                    <td class="label">Carrera:</td>
+                    <td>{{carrera}}</td>
+                </tr>
+                <tr>
+                    <td class="label">Proyecto:</td>
+                    <td>{{proyecto}}</td>
+                </tr>
+                <tr>
+                    <td class="label">Empresa:</td>
+                    <td>{{empresa}}</td>
+                </tr>
+                <tr>
+                    <td class="label">Periodo:</td>
+                    <td>{{periodo}}</td>
+                </tr>
+            </table>
+
+            <div class="button-container">
+                <a href="{{link_acceso}}" class="button">Acceder al Portal</a>
+            </div>
+            
+            <p style="margin-top: 20px; font-size: 14px;">Si no reconoces esta actividad, por favor contacta a tu coordinador inmediatamente.</p>
+        </div>
+        <div class="footer">
+            <p>&copy; 2026 Tecnológico de Estudios Superiores. Todos los derechos reservados.</p>
+        </div>
+    </div>
+</body>
+</html>
