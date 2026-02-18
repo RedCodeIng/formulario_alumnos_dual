@@ -126,3 +126,5 @@ def render_login():
                                     st.info("Verifique que seleccionó la carrera correcta o contacte a su coordinador.")
                             except Exception as e:
                                 st.error(f"Error consultando lista blanca: {e}")
+                    except Exception as e:
+                        st.error(f"Error general en login: {e}")
