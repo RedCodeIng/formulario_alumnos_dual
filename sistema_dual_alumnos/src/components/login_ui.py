@@ -68,12 +68,13 @@ def get_login_css():
     """
 
 def get_login_header():
-    # Paths
-    base_path = "src/assets/images/logos"
+    # Paths - Use absolute path relative to this file to be safe
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+    # Go up one level from 'components' to 'src', then to 'assets/images/logos'
+    # Structure: src/components/login_ui.py -> src/assets
+    base_path = os.path.join(os.path.dirname(current_dir), "assets", "images", "logos")
     
     # Load Real Images
-    # We need to construct absolute path or relative from cwd
-    # Assuming CWD is project root
     logo_tese = load_image_as_base64(os.path.join(base_path, "logo_institucional_tese.png"))
     logo_edomex = load_image_as_base64(os.path.join(base_path, "logo_estado_mexico.png"))
     logo_dual = load_image_as_base64(os.path.join(base_path, "logo_dual_sistema.png"))
