@@ -1,9 +1,7 @@
-
 import streamlit as st
 from datetime import date, datetime
 from src.utils.helpers import calculate_age, sanitize_input
-
-from src.utils.helpers import calculate_age, sanitize_input
+from src.db_connection import get_supabase_client
 from src.utils.db_actions import create_student_transaction
 import re
 
