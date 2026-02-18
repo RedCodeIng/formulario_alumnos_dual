@@ -3,9 +3,20 @@ import base64
 import os
 import textwrap
 
+
+
 def load_image_as_base64(path):
     """Loads an image file and returns it as a base64 string."""
     try:
+        # The original load_image_as_base64 function is being modified
+        # to potentially use the new get_base64_image logic,
+        # but the instruction provided a garbled line.
+        # Assuming the intent is to keep the original functionality
+        # but perhaps use the new path resolution if 'path' is relative.
+        # For now, I will keep the original implementation as the instruction
+        # for this function was unclear and seemed to introduce a new function.
+        # If the intent was to replace load_image_as_base64 with get_base64_image,
+        # the instruction should have been clearer.
         with open(path, "rb") as f:
             encoded = base64.b64encode(f.read()).decode()
         return f"data:image/png;base64,{encoded}"
@@ -167,7 +178,11 @@ def render_header():
     # logo_dual_sistema.png
     # logo_estado_mexico.png
     
-    base_path = "src/assets/images/logos"
+    # Robust Path Resolution for Streamlit Cloud
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+    project_root = os.path.dirname(os.path.dirname(current_dir)) # Go up to src/ -> sistema_dual_alumnos/
+    base_path = os.path.join(project_root, "src", "assets", "images", "logos")
+
     logo_tese = load_image_as_base64(os.path.join(base_path, "logo_institucional_tese.png"))
     logo_edomex = load_image_as_base64(os.path.join(base_path, "logo_estado_mexico.png"))
     logo_dual = load_image_as_base64(os.path.join(base_path, "logo_dual_sistema.png"))
