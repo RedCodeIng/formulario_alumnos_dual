@@ -7,6 +7,7 @@ import re
 
 def render_registro():
     st.title("Inscripción al Modelo DUAL")
+    from src.db_connection import get_supabase_client
     supabase = get_supabase_client()
     
     # 0. Check Status (Prevent Re-registration)
