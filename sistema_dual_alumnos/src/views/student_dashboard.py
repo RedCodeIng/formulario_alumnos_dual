@@ -38,6 +38,12 @@ def render_student_dashboard():
     except Exception as e:
         st.error(f"Error cargando materias: {e}")
 
+    # Success Box for New Registrations
+    if st.session_state.get("registro_complete"):
+        st.success("¡Tu registro ha sido completado exitosamente! Ahora puedes ver tu información y estatus.")
+        # Optional: Clear the flag so it doesn't show on every refresh, 
+        # but for now let's keep it until they logout or for this session.
+    
     # UI LAYOUT
     st.markdown(f"### Bienvenido, {user.get('nombre')} {user.get('ap_paterno')}")
     
@@ -54,9 +60,9 @@ def render_student_dashboard():
             
         with col2:
             st.markdown("#### Datos Académicos")
-            st.write(f"**Carrera:** {st.session_state.get('selected_career', 'Cargando...')}") # Context might be missing if just logged in? No, we set it in auth.
-            # Actually, user record doesn't store career name directly, only ID. 
-            # We rely on session state 'selected_career' or fetch it.
+            # Robust Career Display
+            career_name = st.session_state.get('selected_career') or user.get('carrera') or "Cargando..."
+            st.write(f"**Carrera:** {career_name}") 
             st.write(f"**Semestre:** {user.get('semestre')}")
             st.write(f"**Estatus:** {user.get('estatus')}")
 

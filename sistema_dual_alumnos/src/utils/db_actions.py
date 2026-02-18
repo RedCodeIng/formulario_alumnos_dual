@@ -44,6 +44,7 @@ def create_student_transaction(student_data, project_data, subjects_data):
             "estado_civil": student_data.get("estado_civil"),
             "fecha_nacimiento": student_data["fecha_nacimiento"].isoformat() if hasattr(student_data["fecha_nacimiento"], 'isoformat') else student_data["fecha_nacimiento"],
             "carrera_id": student_data.get("carrera_id"), # NEW
+            "semestre": student_data.get("semestre"),
             "estatus": "Registrado"
         }
         
