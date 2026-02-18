@@ -66,55 +66,58 @@ def render_login():
                                 st.error("CURP incorrecta.")
                         else:
                             # 3. Whitelist Check
-                            # Check if matricula is in lista_blanca
-                            res_wb = supabase.table("lista_blanca").select("*").eq("matricula", matricula).execute()
-                            
-                            if res_wb.data:
-                                wb_entry = res_wb.data[0]
-                                wb_curp = wb_entry.get("curp")
-                                wb_name = wb_entry.get("nombre_completo", "")
+                            # Check if matricula is in lista_blanca AND matches selected career
+                            try:
+                                res_wb = supabase.table("lista_blanca").select("*").eq("matricula", matricula).eq("carrera_id", selected_career_id).execute()
                                 
-                                # Validate CURP (Strict check against whitelist)
-                                # User input 'curp' is the password field here
-                                if wb_curp and curp.strip().upper() != wb_curp.strip().upper():
-                                     st.error("La CURP ingresada no coincide con el registro autorizado.")
-                                else:
-                                    # SPLIT NAME LOGIC (Basic)
-                                    parts = wb_name.split()
-                                    npm = ""
-                                    npp = ""
-                                    nname = ""
+                                if res_wb.data:
+                                    wb_entry = res_wb.data[0]
+                                    wb_curp = wb_entry.get("curp")
+                                    wb_name = wb_entry.get("nombre_completo", "")
                                     
-                                    if len(parts) >= 3:
-                                        npm = parts[-1]
-                                        npp = parts[-2]
-                                        nname = " ".join(parts[:-2])
-                                    elif len(parts) == 2:
-                                        npp = parts[-1]
-                                        nname = parts[0]
+                                    # Validate CURP (Strict check against whitelist)
+                                    # User input 'curp' is the password field here
+                                    if wb_curp and curp.strip().upper() != wb_curp.strip().upper():
+                                         st.error("La CURP ingresada no coincide con el registro autorizado.")
                                     else:
-                                        nname = wb_name
+                                        # SPLIT NAME LOGIC (Basic)
+                                        parts = wb_name.split()
+                                        npm = ""
+                                        npp = ""
+                                        nname = ""
                                         
-                                    st.session_state["registro_step"] = 1
-                                    st.session_state["user"] = {
-                                        "matricula": matricula, 
-                                        "curp": curp,
-                                        "nombre": nname,
-                                        "ap_paterno": npp,
-                                        "ap_materno": npm
-                                    }
-                                    st.session_state["authenticated"] = False
-                                    st.session_state["showing_registro"] = True
-                                    st.session_state["role"] = "student_register"
-                                    st.session_state["selected_career"] = selected_career_name
-                                    st.session_state["selected_career_id"] = selected_career_id
-                                    
-                                    st.success(f"Matrícula autorizada. Bienvenido(a) {nname}.")
-                                    time.sleep(1.5)
-                                    st.rerun()
-                            else:
-                                st.error("Matrícula no autorizada. Contacte a su coordinador para ser dado de alta en la lista blanca.")
-                                st.info("Si es un error, verifique que su matrícula esté escrita correctamente.")
-
-                    except Exception as e:
-                         st.error(f"Error en autenticación: {e}")
+                                        if len(parts) >= 3:
+                                            npm = parts[-1]
+                                            npp = parts[-2]
+                                            nname = " ".join(parts[:-2])
+                                        elif len(parts) == 2:
+                                            npp = parts[-1]
+                                            nname = parts[0]
+                                        else:
+                                            nname = wb_name
+                                            
+                                        st.session_state["registro_step"] = 1
+                                        st.session_state["user"] = {
+                                            "matricula": matricula, 
+                                            "curp": curp,
+                                            "nombre": nname,
+                                            "ap_paterno": npp,
+                                            "ap_materno": npm
+                                        }
+                                        st.session_state["authenticated"] = False
+                                        st.session_state["showing_registro"] = True
+                                        st.session_state["role"] = "student_register"
+                                        st.session_state["selected_career"] = selected_career_name
+                                        st.session_state["selected_career_id"] = selected_career_id
+                                        
+                                        st.success(f"Matrícula autorizada para {selected_career_name}. Bienvenido(a) {nname}.")
+                                        time.sleep(1.5)
+                                        st.rerun()
+                                else:
+                                    # Check if it exists for ANOTHER career to give better error?
+                                    # Or just generic error to avoid leaking info.
+                                    # Generic is safer, but user asked for restriction.
+                                    st.error("Matrícula no autorizada para la carrera seleccionada.")
+                                    st.info("Verifique que seleccionó la carrera correcta o contacte a su coordinador.")
+                            except Exception as e:
+                                st.error(f"Error consultando lista blanca: {e}")

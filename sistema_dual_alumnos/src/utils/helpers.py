@@ -14,3 +14,21 @@ def calculate_age(born: date) -> int:
 def format_currency(amount: float) -> str:
     """Formats a number as currency."""
     return "${:,.2f}".format(amount)
+
+def sanitize_input(text: str) -> str:
+    """
+    Sanitizes input text to prevent basic XSS/Code Injection.
+    Removes HTML tags and dangerous characters.
+    """
+    if not isinstance(text, str):
+        return text
+        
+    # Remove HTML tags
+    clean = re.sub(r'<[^>]*>', '', text)
+    # Remove script tags specifically (redundant but safe)
+    clean = re.sub(r'javascript:', '', clean, flags=re.IGNORECASE)
+    # Remove potential SQL injection common chars (basic)
+    # Note: Parametrized queries handles this, but for display safety:
+    clean = clean.replace("'", "''") # Basic SQL escaping if manual concatenation used (we use ORM though)
+    
+    return clean.strip()

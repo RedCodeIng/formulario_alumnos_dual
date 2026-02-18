@@ -1,8 +1,9 @@
 
 import streamlit as st
 from datetime import date, datetime
-from src.utils.helpers import calculate_age
-from src.db_connection import get_supabase_client
+from src.utils.helpers import calculate_age, sanitize_input
+
+from src.utils.helpers import calculate_age, sanitize_input
 from src.utils.db_actions import create_student_transaction
 import re
 
@@ -81,6 +82,15 @@ def render_registro():
             semestre = st.selectbox("Semestre", ["6", "7", "8", "9"], index=sem_idx)
         
         if st.button("Siguiente >"):
+            # Sanitize Personal Data
+            nombre = sanitize_input(nombre)
+            ap_paterno = sanitize_input(ap_paterno)
+            ap_materno = sanitize_input(ap_materno)
+            email_inst = sanitize_input(email_inst)
+            email_pers = sanitize_input(email_pers)
+            telefono = sanitize_input(telefono)
+            nss = sanitize_input(nss)
+
             if not nombre or not ap_paterno or not nss or not email_inst or not email_pers or not telefono:
                     st.error("Por favor llene todos los campos obligatorios.")
             elif not selected_career_id:
@@ -130,6 +140,20 @@ def render_registro():
                 fecha_inicio = st.date_input("Fecha Inicio Convenio", value=st.session_state.get("project_data", {}).get("fecha_inicio", date.today()))
                 fecha_fin = st.date_input("Fecha Fin Convenio", value=st.session_state.get("project_data", {}).get("fecha_fin", date.today()))
         
+        # Validation Display
+        if fecha_inicio and fecha_fin:
+             if fecha_inicio == fecha_fin:
+                  st.error("⚠️ La fecha de inicio y fin no pueden ser iguales.")
+             elif fecha_inicio > fecha_fin:
+                  st.error("⚠️ La fecha de inicio no puede ser posterior a la fecha fin.")
+             else:
+                  delta = fecha_fin - fecha_inicio
+                  days = delta.days
+                  if 360 <= days <= 370:
+                       st.success(f"Duración: {days} días (Aprox. 1 Año) ✅")
+                  else:
+                       st.warning(f"⚠️ **Atención:** La duración del convenio es de {days} días. (No es 1 año exacto).")
+
         descripcion_proyecto = st.text_area("Descripción del Proyecto", value=st.session_state.get("project_data", {}).get("descripcion_proyecto", ""))
 
         c_nav1, c_nav2 = st.columns([1,1])
@@ -140,6 +164,10 @@ def render_registro():
         if c_nav2.button("Siguiente >", key="next2"):
                 if not nombre_proyecto or not ue_id or not mentor_id:
                     st.error("Todos los campos del proyecto son obligatorios (Empresa, Mentor, Nombre Proyecto).")
+                elif fecha_inicio == fecha_fin:
+                    st.error("Las fechas no pueden ser iguales.")
+                elif fecha_inicio > fecha_fin:
+                    st.error("La fecha de inicio no puede ser posterior a la fecha fin.")
                 else:
                     st.session_state["project_data"] = {
                         "ue_id": ue_id,
