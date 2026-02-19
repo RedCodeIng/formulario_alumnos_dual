@@ -1,0 +1,6 @@
+streamlit
+supabase
+pandas
+streamlit-authenticator
+python-dotenv
+xhtml2pdf
