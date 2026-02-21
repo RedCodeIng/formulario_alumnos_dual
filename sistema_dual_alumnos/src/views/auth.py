@@ -8,10 +8,27 @@ def render_login():
     """Renders the login view for Students and Mentors UE."""
     st.markdown(get_login_css(), unsafe_allow_html=True)
     
-    col1, col2, col3 = st.columns([1, 2, 1])
+    # --- Data Fetching (Outside Form) ---
+    carreras_options = {}
+    fetch_error = None
+    
+    try:
+        supabase = get_supabase_client()
+        res_carreras = supabase.table("carreras").select("id, nombre").execute()
+        if res_carreras.data:
+            carreras_data = res_carreras.data
+            carreras_data.sort(key=lambda x: x["nombre"])
+            carreras_options = {c["nombre"]: c["id"] for c in carreras_data}
+    except Exception as e:
+        fetch_error = f"Error conectando a la base de datos: {e}"
+    
+    col1, col2, col3 = st.columns([1, 3, 1])
     
     with col2:
         st.markdown(get_login_header(), unsafe_allow_html=True)
+        
+        if fetch_error:
+             st.error(fetch_error)
         
         tab_student, tab_mentor, tab_mentor_ie = st.tabs(["🎓 Acceso Alumnos", "🏢 Acceso Mentores UE", "👨‍🏫 Acceso Mentores IE"])
         
@@ -21,18 +38,6 @@ def render_login():
                 matricula = st.text_input("Matrícula")
                 curp = st.text_input("CURP", type="password")
             
-                # Fetch Carreras from DB
-                supabase = get_supabase_client()
-                carreras_options = {}
-                try:
-                     res_carreras = supabase.table("carreras").select("id, nombre").execute()
-                     if res_carreras.data:
-                         carreras_data = res_carreras.data
-                         carreras_data.sort(key=lambda x: x["nombre"])
-                         carreras_options = {c["nombre"]: c["id"] for c in carreras_data}
-                except Exception as e:
-                     st.error(f"Error cargando carreras: {e}")
-            
                 selected_career_name = None
                 selected_career_id = None
 
@@ -40,8 +45,8 @@ def render_login():
                     selected_career_name = st.selectbox("Seleccione su Carrera / División", list(carreras_options.keys()))
                     if selected_career_name:
                         selected_career_id = carreras_options[selected_career_name]
-                else:
-                    st.error("No se pudieron cargar las carreras. Verifique la conexión a base de datos.")
+                elif not fetch_error:
+                    st.warning("No se pudieron cargar las carreras. Verifique la conexión a base de datos.")
 
                 submitted = st.form_submit_button("Ingresar")
             
