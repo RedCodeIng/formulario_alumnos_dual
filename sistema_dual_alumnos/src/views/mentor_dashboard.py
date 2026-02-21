@@ -4,8 +4,6 @@ from datetime import datetime
 import pandas as pd
 import io
 import os
-from src.utils.pdf_generator_images import create_percentage_donut
-from src.utils.pdf_generator_docx import generate_pdf_from_docx
 
 def render_mentor_dashboard():
     # Enforce Auth
@@ -170,13 +168,9 @@ def render_evaluation_form():
              numero_reporte = st.number_input("Número de Reporte", min_value=1, value=1)
              
         # Submit actions
-        col_btn1, col_btn2 = st.columns(2)
-        with col_btn1:
-            btn_save = st.form_submit_button("💾 Guardar y Enviar Evaluación", type="primary", use_container_width=True)
-        with col_btn2:
-            btn_generate = st.form_submit_button("📄 Generar Anexo 5.4 PDF", type="secondary", use_container_width=True)
+        btn_save = st.form_submit_button("💾 Guardar Evaluación", type="primary", use_container_width=True)
         
-        if btn_save or btn_generate:
+        if btn_save:
             if not mes_evaluado:
                  st.error("Por favor ingrese el Mes Evaluado.")
             else:
@@ -185,179 +179,16 @@ def render_evaluation_form():
                  count_acts = len(eval_data)
                  average = int(total_grade / count_acts) if count_acts > 0 else 0
                  
-                 if btn_save:
-                     try:
-                         supabase.table("proyectos_dual").update({"calificacion_ue": average}).eq("id", project_id).execute()
-                         st.success(f"Evaluación guardada exitosamente. Promedio preliminar: {average}%")
-                     except Exception as e:
-                         st.error(f"Error al guardar calificación en base de datos: {e}")
-                 
-                 if btn_generate:
-                     with st.spinner("Generando Documento..."):
-                         try:
-                             # 1. Generate Donut Chart
-                             # We need a temporary physical file to inject into docx
-                             chart_path = f"tmp_chart_{student_id}.png"
-                             create_percentage_donut(average, chart_path)
-                             
-                             # 2. Build Context for DOCX
-                             context = build_anexo54_context(
-                                  project_data,
-                                  competencias,
-                                  actividades,
-                                  eval_data,
-                                  mes_evaluado,
-                                  numero_reporte,
-                                  chart_path,
-                                  average
-                             )
-                             
-                             # Ensure templates folder exists
-                             templates_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "templates", "docs")
-                             os.makedirs(templates_dir, exist_ok=True)
-                             template_path = os.path.join(templates_dir, "Anexo_5.4_Reporte_de_Actividades.docx")
-                             pdf_path = f"tmp_anexo54_{student_id}.pdf"
-                             
-                             # Generate PDF using the modular function
-                             success, msg = generate_pdf_from_docx(
-                                 "Anexo_5.4_Reporte_de_Actividades.docx",
-                                 context,
-                                 pdf_path,
-                                 template_path=template_path
-                             )
-                             
-                             # Cleanup chart
-                             if os.path.exists(chart_path):
-                                 os.remove(chart_path)
-                                 
-                             # Show Download Button
-                             if success and os.path.exists(pdf_path):
-                                 st.success("¡Documento Anexo 5.4 generado exitosamente!")
-                                 with open(pdf_path, "rb") as f:
-                                     doc_bytes = f.read()
-                                 
-                                 file_name = f"Anexo_5.4_{alumno['matricula']}_{mes_evaluado.replace(' ', '_')}.pdf"
-                                 st.download_button(
-                                     label="📥 Descargar Anexo 5.4 (PDF)",
-                                     data=doc_bytes,
-                                     file_name=file_name,
-                                     mime="application/pdf",
-                                     type="primary"
-                                 )
-                                 os.remove(pdf_path) # Cleanup temp pdf
-                             else:
-                                 st.error(f"No se pudo generar el documento: {msg}")
-                         except Exception as e:
-                             st.error(f"Error generando documento: {e}")
-                             # cleanup chart on crash
-                             if 'chart_path' in locals() and os.path.exists(chart_path):
-                                  os.remove(chart_path)
-                             if 'pdf_path' in locals() and os.path.exists(pdf_path):
-                                  os.remove(pdf_path)
+                 try:
+                     supabase.table("proyectos_dual").update({"calificacion_ue": average}).eq("id", project_id).execute()
+                     st.success(f"Evaluación guardada exitosamente. Promedio preliminar: {average}%")
+                     st.info("El Coordinador Institucional ahora podrá visualizar y generar el Anexo 5.4 oficial desde su panel.")
+                 except Exception as e:
+                     st.error(f"Error al guardar calificación en base de datos: {e}")
 
     if st.button("Cancelar / Volver"):
          del st.session_state["evaluating_student_id"]
          del st.session_state["eval_project_id"]
          st.rerun()
 
-def build_anexo54_context(project_data, competencias, actividades, eval_data, mes_evaluado, numero_reporte, chart_path, average):
-    """
-    Constructs the exact dictionary mapping required by the Anexo 5.4 Word Template.
-    """
-    from docxtpl import InlineImage
-    import docx
-    
-    # Needs a dummy doc object for InlineImage, python-docx handles this
-    # Actually, InlineImage takes the template doc as first arg inside python-docx/docxtpl
-    # But usually creating InlineImage happens at render time, so we wrap it inside generate function?
-    # No, python-docx/docxtpl InlineImage takes (tpl, image_descriptor) 
-    # To bypass needing 'tpl' here, docxtpl allows `docxtpl.InlineImage(tpl, path)` 
-    # Wait, I don't have `tpl` here.
-    # SOLUTION: I will pass chart_path as a string 'IMAGE_PATH:tmp_chart.png' and let
-    # `pdf_generator_docx.py` handle converting it to InlineImage before rendering.
-    
-    a = project_data["alumnos"]
-    emp = project_data.get("unidades_economicas", {})
-    m_ue = project_data.get("mentores_ue", {})
-    
-    # We need mentor IE info. It's stored as mentor_ie_id in project. We need to fetch it.
-    supabase = get_supabase_client()
-    m_ie_name = "N/A"
-    m_ie_tel = ""
-    if project_data.get("mentor_ie_id"):
-        res_mie = supabase.table("maestros").select("nombre_completo, telefono").eq("id", project_data["mentor_ie_id"]).execute()
-        if res_mie.data:
-            m_ie_name = res_mie.data[0]["nombre_completo"]
-            m_ie_tel = res_mie.data[0].get("telefono", "")
-            
-    # Also fetch Carrera name
-    c_name = "N/A"
-    if a.get("carrera_id"):
-         res_c = supabase.table("carreras").select("nombre").eq("id", a["carrera_id"]).execute()
-         if res_c.data:
-              c_name = res_c.data[0]["nombre"]
 
-    context = {
-        "numero_reporte": numero_reporte,
-        "fechas_periodo": mes_evaluado, # The period evaluated
-        "nombre_proyecto": project_data.get("nombre_proyecto", ""),
-        "empresa": emp.get("nombre_comercial", ""),
-        "institucion_educativa": "Tecnológico de Estudios Superiores de Ecatepec",
-        "carrera": c_name,
-        "nombre_alumno": f"{a['nombre']} {a['ap_paterno']} {a['ap_materno']}",
-        "telefono_alumno": a.get("telefono", ""),
-        "mentor_ue": m_ue.get("nombre_completo", ""),
-        "telefono_mentorue": m_ue.get("telefono", ""),
-        "mentor_ie": m_ie_name,
-        "telefono_mentorie": m_ie_tel,
-        "fecha_elaboracion": datetime.now().strftime("%d/%m/%Y"),
-        # The chart path string. The generator must intercept this and convert to InlineImage
-        "grafica_promedio": f"IMAGE_PATH:{chart_path}" 
-    }
-    
-    # B) Tabla 2.- Desarrollo de Competencia
-    lista_competencias = []
-    
-    # C) Tabla 3.- Evaluación de la UE (Matrices repetibles)
-    evaluaciones = []
-    
-    for i, comp in enumerate(competencias):
-         comp_acts = [act for act in actividades if act["competencia_id"] == comp["id"]]
-         if not comp_acts: continue
-         
-         # Build List for Table 2
-         lista_competencias.append({
-             "numero_consecutivo": i + 1,
-             "competencia_desarrollada": comp["descripcion_competencia"],
-             "asignaturas_cubre": comp["asignaturas"]["nombre"]
-         })
-         
-         # Build Matrix for Table 3
-         eval_matrix = {
-             "competencia_alcanzada": comp["descripcion_competencia"], # User said no sequence number needed now
-             "firma_y_fecha": f"{m_ue.get('nombre_completo', '')}\n{datetime.now().strftime('%d/%m/%Y')}",
-             "actividades": []
-         }
-         
-         for act in comp_acts:
-              g = eval_data.get(act["id"], 0)
-              act_dict = {
-                  "descripcion_actividad": act["descripcion_actividad"],
-                  "evidencia": act.get("evidencia", ""),
-                  "horas": act.get("horas_dedicacion", 0),
-                  "p0": "X" if g == 0 else "",
-                  "p70": "X" if g == 70 else "",
-                  "p80": "X" if g == 80 else "",
-                  "p90": "X" if g == 90 else "",
-                  "p100": "X" if g == 100 else "",
-                  "rec_ie": "", # Leave blank for Mentor IE to fill physically or next step? Format implies empty.
-                  "rec_ue": ""  # User said "ya la matriz no lleva recomendacion ue ni ie" - I will omit these rows per latest screenshot.
-              }
-              eval_matrix["actividades"].append(act_dict)
-              
-         evaluaciones.append(eval_matrix)
-
-    context["lista_competencias"] = lista_competencias
-    context["evaluaciones"] = evaluaciones
-    
-    return context

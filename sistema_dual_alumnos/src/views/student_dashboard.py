@@ -4,7 +4,6 @@ import os
 import tempfile
 from datetime import datetime
 from src.db_connection import get_supabase_client
-from src.utils.doc_generator import generar_documento_word
 
 def render_student_dashboard():
     st.title("Mi Portal DUAL")
