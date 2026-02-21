@@ -1,3 +1,0 @@
-# Este archivo está intencionalmente vacío.
-# La aplicación de Alumnos ya no requiere paquetes del sistema operativo (como LibreOffice o fuentes) 
-# debido a que la generación de documentos (PDF/Word) se trasladó exclusivamente al Coordinador.
