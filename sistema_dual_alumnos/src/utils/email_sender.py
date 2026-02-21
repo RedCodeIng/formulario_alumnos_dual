@@ -1,9 +1,9 @@
-
 import os
 import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 import streamlit as st
+from datetime import date
 
 def send_confirmation_email(to_email, student_data):
     """
@@ -15,30 +15,24 @@ def send_confirmation_email(to_email, student_data):
     """
     smtp_server = os.environ.get("SMTP_SERVER", "smtp.gmail.com")
     smtp_port = int(os.environ.get("SMTP_PORT", 587))
-    sender_email = os.environ.get("SMTP_EMAIL", "test@example.com")
+    sender_email = os.environ.get("SMTP_USER", "test@example.com")
     sender_password = os.environ.get("SMTP_PASSWORD", "password")
 
     today = date.today().strftime("%d/%m/%Y")
     
-    # Load HTML Template
+    # Load HTML Template using Jinja2
     try:
+        from jinja2 import Environment, FileSystemLoader
+        # Path is currently: src/utils/email_sender.py -> ../templates/email/registro_alumno.html.
         current_dir = os.path.dirname(os.path.abspath(__file__))
-        template_path = os.path.join(current_dir, "../assets/email_template.html")
-        with open(template_path, "r", encoding="utf-8") as f:
-             html_content = f.read()
-             
-        # Replacements
-        html_content = html_content.replace("{{nombre}}", student_data.get("nombre", "Alumno"))
-        html_content = html_content.replace("{{matricula}}", student_data.get("matricula", "N/A"))
-        html_content = html_content.replace("{{carrera}}", student_data.get("carrera", "ISC"))
-        html_content = html_content.replace("{{proyecto}}", student_data.get("proyecto", "Proyecto DUAL"))
-        html_content = html_content.replace("{{empresa}}", student_data.get("ue", "Empresa"))
-        html_content = html_content.replace("{{periodo}}", student_data.get("fecha_inicio", today)) # Placeholder
-        html_content = html_content.replace("{{link_acceso}}", "http://localhost:8502") # Access Link
+        template_dir = os.path.join(current_dir, "../templates/email")
+        env = Environment(loader=FileSystemLoader(template_dir))
+        template = env.get_template("registro_alumno.html")
+        html_content = template.render(student_data)
         
     except Exception as e:
         print(f"Error loading template: {e}")
-        html_content = f"<p>Hola {student_data.get('nombre')}, tu registro fue exitoso.</p>"
+        html_content = f"<p>Hola {student_data.get('nombre_alumno')}, tu registro fue exitoso.</p>"
 
     subject = "Confirmación de Registro DUAL - Exitoso"
 

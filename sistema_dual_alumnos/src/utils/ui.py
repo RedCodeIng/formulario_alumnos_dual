@@ -234,25 +234,5 @@ def render_header():
     img_dual = f'<img src="{logo_dual}" style="height: 100px; width: auto;">' if logo_dual else ''
     
     # We use a flush-left string to ensure st.markdown does not interpret it as a code block
-    html = f"""
-<div style="display: flex; flex-direction: row; align-items: center; justify-content: space-between; border-bottom: 4px solid #8d2840; padding-bottom: 15px; margin-bottom: 20px; background-color: white;">
-    <div style="flex: 1; display: flex; justify-content: flex-start; padding-left: 20px;">
-        {img_tese}
-    </div>
-    <div style="flex: 2; display: flex; flex-direction: column; align-items: center; justify-content: center;">
-        <div style="margin-bottom: 10px;">
-            {img_dual}
-        </div>
-        <h1 style="border: none; margin: 0; font-size: 28px; color: #8d2840; text-transform: uppercase; font-weight: bold; text-align: center; line-height: 1.2;">
-            Sistema de Gestión DUAL
-        </h1>
-        <p style="margin: 0; color: #a48857; font-size: 15px; text-transform: uppercase; letter-spacing: 1px;">
-            Gobierno del Estado de México
-        </p>
-    </div>
-    <div style="flex: 1; display: flex; justify-content: flex-end; padding-right: 20px;">
-        {img_edomex}
-    </div>
-</div>
-"""
+    html = f"""<div style="display: flex; flex-direction: row; align-items: stretch; border-bottom: 4px solid #8d2840; padding-bottom: 0px; margin-bottom: 20px; background-color: white; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.05); min-height: 80px;"><div style="flex: 0 0 auto; display: flex; align-items: center; justify-content: flex-start; padding: 10px 20px; background-color: white;">{img_tese}</div><div style="flex: 1 1 auto; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 10px 20px; background-color: white; text-align: center;"><h1 style="border: none; margin: 0; font-size: 24px; color: #8d2840; text-transform: uppercase; font-weight: 700; letter-spacing: 0.5px; padding-bottom: 0;">SISTEMA DE GESTIÓN DUAL</h1><p style="margin: 4px 0 0 0; color: #a48857; font-size: 12px; text-transform: uppercase; letter-spacing: 1px; font-weight: 500;">GOBIERNO DEL ESTADO DE MÉXICO</p></div><div style="flex: 0 0 auto; display: flex; align-items: center; justify-content: flex-end; padding: 10px 20px; background-color: white;">{img_edomex}</div></div>"""
     st.markdown(html, unsafe_allow_html=True)

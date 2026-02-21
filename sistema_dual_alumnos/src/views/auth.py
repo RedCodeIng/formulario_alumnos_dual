@@ -13,7 +13,7 @@ def render_login():
     with col2:
         st.markdown(get_login_header(), unsafe_allow_html=True)
         
-        tab_student, tab_mentor = st.tabs(["🎓 Acceso Alumnos", "🏢 Acceso Mentores UE"])
+        tab_student, tab_mentor, tab_mentor_ie = st.tabs(["🎓 Acceso Alumnos", "🏢 Acceso Mentores UE", "👨‍🏫 Acceso Mentores IE"])
         
         with tab_student:
         
@@ -64,14 +64,37 @@ def render_login():
                                     if student_career_id and student_career_id != selected_career_id:
                                         st.error("Usted está registrado en otra carrera. Por favor seleccione la carrera correcta en el menú.")
                                     else:
-                                        st.session_state["authenticated"] = True
-                                        st.session_state["user"] = student
-                                        st.session_state["role"] = "student"
-                                        st.session_state["selected_career"] = selected_career_name
-                                        st.session_state["selected_career_id"] = selected_career_id
-                                        st.success(f"Bienvenido al Portal DUAL - {selected_career_name}")
-                                        time.sleep(1)
-                                        st.rerun()
+                                        from src.utils.db_actions import get_active_period_id
+                                        periodo_id = get_active_period_id()
+                                        
+                                        # Check if student has academic load for the current period
+                                        needs_reenrollment = False
+                                        if periodo_id:
+                                            res_insc = supabase.table("inscripciones_asignaturas").select("id").eq("alumno_id", student["id"]).eq("periodo_id", periodo_id).execute()
+                                            if not res_insc.data:
+                                                needs_reenrollment = True
+                                        
+                                        if needs_reenrollment:
+                                            st.session_state["registro_step"] = 1
+                                            st.session_state["user"] = student
+                                            st.session_state["authenticated"] = False
+                                            st.session_state["showing_registro"] = True
+                                            st.session_state["role"] = "student_register"
+                                            st.session_state["selected_career"] = selected_career_name
+                                            st.session_state["selected_career_id"] = selected_career_id
+                                            
+                                            st.info(f"Hola {student.get('nombre', '')}, detectamos que necesitas realizar tu carga académica para el periodo actual.")
+                                            time.sleep(1.5)
+                                            st.rerun()
+                                        else:
+                                            st.session_state["authenticated"] = True
+                                            st.session_state["user"] = student
+                                            st.session_state["role"] = "student"
+                                            st.session_state["selected_career"] = selected_career_name
+                                            st.session_state["selected_career_id"] = selected_career_id
+                                            st.success(f"Bienvenido al Portal DUAL - {selected_career_name}")
+                                            time.sleep(1)
+                                            st.rerun()
                                 else:
                                     st.error("CURP incorrecta.")
                             else:
@@ -180,5 +203,42 @@ def render_login():
                                     st.error("Contraseña incorrecta.")
                             else:
                                 st.error("Correo electrónico no encontrado en el sistema empresarial.")
+                        except Exception as e:
+                            st.error(f"Error de conexión en login: {e}")
+
+        with tab_mentor_ie:
+            st.markdown("### Portal Académico IE")
+            st.info("Utilice su correo institucional y la contraseña proporcionada.")
+            
+            with st.form("login_mentor_ie_form"):
+                email_ie = st.text_input("Correo Institucional")
+                pass_ie = st.text_input("Contraseña", type="password")
+                
+                submitted_ie = st.form_submit_button("Ingresar como Mentor IE")
+                
+                if submitted_ie:
+                    if not email_ie or not pass_ie:
+                        st.error("Por favor, ingrese Correo y Contraseña.")
+                    else:
+                        try:
+                            res_ie = supabase.table("maestros").select("*").eq("email_institucional", email_ie).eq("es_mentor_ie", True).execute()
+                            if res_ie.data:
+                                mentor_ie = res_ie.data[0]
+                                hashed_input = hashlib.sha256(pass_ie.encode('utf-8')).hexdigest()
+                                stored_hash = mentor_ie.get("password_hash")
+                                
+                                if not stored_hash:
+                                    st.error("Esta cuenta no tiene contraseña configurada. Contacte al coordinador.")
+                                elif stored_hash == hashed_input:
+                                    st.session_state["authenticated"] = True
+                                    st.session_state["user"] = mentor_ie
+                                    st.session_state["role"] = "mentor_ie"
+                                    st.success(f"Bienvenido(a) Profesor(a) {mentor_ie['nombre_completo']}")
+                                    time.sleep(1)
+                                    st.rerun()
+                                else:
+                                    st.error("Contraseña incorrecta.")
+                            else:
+                                st.error("Tus credenciales no existen o no tienes el rol de Mentor IE asignado.")
                         except Exception as e:
                             st.error(f"Error de conexión en login: {e}")

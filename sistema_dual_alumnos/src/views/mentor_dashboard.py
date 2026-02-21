@@ -169,10 +169,14 @@ def render_evaluation_form():
         with col_f2:
              numero_reporte = st.number_input("Número de Reporte", min_value=1, value=1)
              
-        # Submit
-        submitted = st.form_submit_button("Guardar Evaluación y Generar Anexo 5.4", type="primary", use_container_width=True)
+        # Submit actions
+        col_btn1, col_btn2 = st.columns(2)
+        with col_btn1:
+            btn_save = st.form_submit_button("💾 Guardar y Enviar Evaluación", type="primary", use_container_width=True)
+        with col_btn2:
+            btn_generate = st.form_submit_button("📄 Generar Anexo 5.4 PDF", type="secondary", use_container_width=True)
         
-        if submitted:
+        if btn_save or btn_generate:
             if not mes_evaluado:
                  st.error("Por favor ingrese el Mes Evaluado.")
             else:
@@ -181,69 +185,75 @@ def render_evaluation_form():
                  count_acts = len(eval_data)
                  average = int(total_grade / count_acts) if count_acts > 0 else 0
                  
-                 st.success(f"Evaluación guardada exitosamente. Promedio: {average}%")
-                 
-                 with st.spinner("Generando Documento..."):
+                 if btn_save:
                      try:
-                         # 1. Generate Donut Chart
-                         # We need a temporary physical file to inject into docx
-                         chart_path = f"tmp_chart_{student_id}.png"
-                         create_percentage_donut(average, chart_path)
-                         
-                         # 2. Build Context for DOCX
-                         context = build_anexo54_context(
-                              project_data,
-                              competencias,
-                              actividades,
-                              eval_data,
-                              mes_evaluado,
-                              numero_reporte,
-                              chart_path,
-                              average
-                         )
-                         
-                         # Ensure templates folder exists
-                         templates_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "templates", "docs")
-                         os.makedirs(templates_dir, exist_ok=True)
-                         template_path = os.path.join(templates_dir, "Anexo_5.4_Reporte_de_Actividades.docx")
-                         pdf_path = f"tmp_anexo54_{student_id}.pdf"
-                         
-                         # Generate PDF using the modular function
-                         success, msg = generate_pdf_from_docx(
-                             "Anexo_5.4_Reporte_de_Actividades.docx",
-                             context,
-                             pdf_path,
-                             template_path=template_path
-                         )
-                         
-                         # Cleanup chart
-                         if os.path.exists(chart_path):
-                             os.remove(chart_path)
-                             
-                         # Show Download Button
-                         if success and os.path.exists(pdf_path):
-                             st.success("¡Documento Anexo 5.4 generado exitosamente!")
-                             with open(pdf_path, "rb") as f:
-                                 doc_bytes = f.read()
-                             
-                             file_name = f"Anexo_5.4_{alumno['matricula']}_{mes_evaluado.replace(' ', '_')}.pdf"
-                             st.download_button(
-                                 label="📥 Descargar Anexo 5.4 (PDF)",
-                                 data=doc_bytes,
-                                 file_name=file_name,
-                                 mime="application/pdf",
-                                 type="primary"
-                             )
-                             os.remove(pdf_path) # Cleanup temp pdf
-                         else:
-                             st.error(f"No se pudo generar el documento: {msg}")
+                         supabase.table("proyectos_dual").update({"calificacion_ue": average}).eq("id", project_id).execute()
+                         st.success(f"Evaluación guardada exitosamente. Promedio preliminar: {average}%")
                      except Exception as e:
-                         st.error(f"Error generando documento: {e}")
-                         # cleanup chart on crash
-                         if 'chart_path' in locals() and os.path.exists(chart_path):
-                              os.remove(chart_path)
-                         if 'pdf_path' in locals() and os.path.exists(pdf_path):
-                              os.remove(pdf_path)
+                         st.error(f"Error al guardar calificación en base de datos: {e}")
+                 
+                 if btn_generate:
+                     with st.spinner("Generando Documento..."):
+                         try:
+                             # 1. Generate Donut Chart
+                             # We need a temporary physical file to inject into docx
+                             chart_path = f"tmp_chart_{student_id}.png"
+                             create_percentage_donut(average, chart_path)
+                             
+                             # 2. Build Context for DOCX
+                             context = build_anexo54_context(
+                                  project_data,
+                                  competencias,
+                                  actividades,
+                                  eval_data,
+                                  mes_evaluado,
+                                  numero_reporte,
+                                  chart_path,
+                                  average
+                             )
+                             
+                             # Ensure templates folder exists
+                             templates_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "templates", "docs")
+                             os.makedirs(templates_dir, exist_ok=True)
+                             template_path = os.path.join(templates_dir, "Anexo_5.4_Reporte_de_Actividades.docx")
+                             pdf_path = f"tmp_anexo54_{student_id}.pdf"
+                             
+                             # Generate PDF using the modular function
+                             success, msg = generate_pdf_from_docx(
+                                 "Anexo_5.4_Reporte_de_Actividades.docx",
+                                 context,
+                                 pdf_path,
+                                 template_path=template_path
+                             )
+                             
+                             # Cleanup chart
+                             if os.path.exists(chart_path):
+                                 os.remove(chart_path)
+                                 
+                             # Show Download Button
+                             if success and os.path.exists(pdf_path):
+                                 st.success("¡Documento Anexo 5.4 generado exitosamente!")
+                                 with open(pdf_path, "rb") as f:
+                                     doc_bytes = f.read()
+                                 
+                                 file_name = f"Anexo_5.4_{alumno['matricula']}_{mes_evaluado.replace(' ', '_')}.pdf"
+                                 st.download_button(
+                                     label="📥 Descargar Anexo 5.4 (PDF)",
+                                     data=doc_bytes,
+                                     file_name=file_name,
+                                     mime="application/pdf",
+                                     type="primary"
+                                 )
+                                 os.remove(pdf_path) # Cleanup temp pdf
+                             else:
+                                 st.error(f"No se pudo generar el documento: {msg}")
+                         except Exception as e:
+                             st.error(f"Error generando documento: {e}")
+                             # cleanup chart on crash
+                             if 'chart_path' in locals() and os.path.exists(chart_path):
+                                  os.remove(chart_path)
+                             if 'pdf_path' in locals() and os.path.exists(pdf_path):
+                                  os.remove(pdf_path)
 
     if st.button("Cancelar / Volver"):
          del st.session_state["evaluating_student_id"]

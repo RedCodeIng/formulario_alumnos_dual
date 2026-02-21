@@ -67,6 +67,7 @@ def create_student_transaction(student_data, project_data, subjects_data):
             "mentor_ue_id": project_data["mentor_ue_id"],
             "nombre_proyecto": project_data["nombre_proyecto"],
             "descripcion_proyecto": project_data.get("descripcion_proyecto"),
+            "marco_teorico": project_data.get("marco_teorico"),
             "fecha_inicio_convenio": f_inicio.isoformat() if hasattr(f_inicio, 'isoformat') else f_inicio,
             "fecha_fin_convenio": f_fin.isoformat() if hasattr(f_fin, 'isoformat') else f_fin
         }
@@ -83,6 +84,7 @@ def create_student_transaction(student_data, project_data, subjects_data):
                 "asignatura_id": subject["asignatura_id"],
                 "maestro_id": subject["maestro_id"], # Evaluator
                 "grupo": subject.get("grupo"),
+                "descripcion_actividades": subject.get("actividades"),
                 "parcial_1": subject.get("p1", True),
                 "parcial_2": subject.get("p2", True),
                 "parcial_3": subject.get("p3", True)

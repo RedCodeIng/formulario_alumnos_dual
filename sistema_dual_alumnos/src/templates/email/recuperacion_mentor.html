@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Recuperación de Acceso - Mentor UE</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            color: #333333;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 0;
+        }
+
+        .email-container {
+            max-width: 650px;
+            margin: 20px auto;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            border: 1px solid #ddd;
+        }
+
+        .header {
+            background-color: #ffffff;
+            padding: 15px 25px;
+            border-bottom: 4px solid #8d2840;
+        }
+
+        .header img {
+            max-height: 55px;
+            vertical-align: middle;
+        }
+
+        .content {
+            padding: 20px 30px;
+        }
+
+        .content h1 {
+            color: #8d2840;
+            font-size: 24px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .content p {
+            font-size: 15px;
+            margin-bottom: 15px;
+            text-align: justify;
+        }
+
+        .info-details {
+            background-color: #f9f9f9;
+            border-left: 5px solid #a48857;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 5px;
+        }
+
+        .info-details p {
+            margin: 5px 0;
+            color: #333333;
+        }
+
+        .alert-box {
+            background-color: #fff8e1;
+            border: 1px solid #ffe082;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px 0;
+            font-size: 14px;
+        }
+
+        .inspirational-quote {
+            text-align: center;
+            font-style: italic;
+            color: #8d2840;
+            background-color: #fcf8f2;
+            margin: 30px 0 20px 0;
+            font-size: 16px;
+            font-weight: bold;
+            padding: 20px;
+            border-radius: 8px;
+            border: 1px solid #eaddc4;
+        }
+
+        .footer {
+            background-color: #8d2840;
+            color: #ffffff;
+            text-align: center;
+            padding: 20px;
+            font-size: 12px;
+            border-top: 4px solid #a48857;
+        }
+
+        .footer p {
+            margin: 5px 0;
+        }
+
+        .footer a {
+            color: #a48857;
+            text-decoration: none;
+            font-weight: bold;
+        }
+
+        .techcoatl-signature {
+            background-color: #e0e0e0;
+            color: #555555;
+            text-align: center;
+            padding: 10px;
+            font-size: 10px;
+            font-weight: bold;
+            letter-spacing: 1px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="email-container">
+        <!-- Encabezado Membretado Oficial -->
+        <div class="header">
+            <table width="100%" role="presentation" border="0" cellspacing="0" cellpadding="0">
+                <tr>
+                    <td align="left" valign="middle" width="22%">
+                        <img src="https://i.imgur.com/NsK8IXi.png" alt="TESE">
+                    </td>
+                    <td align="center" valign="middle" width="56%"
+                        style="color: #8d2840; font-size: 14px; font-weight: bold; text-align: center; padding: 0 5px; line-height: 1.3;">
+                        TECNOLÓGICO DE ESTUDIOS SUPERIORES DE ECATEPEC
+                    </td>
+                    <td align="right" valign="middle" width="22%">
+                        <img src="https://i.imgur.com/bLvDmJM.png" alt="Gobierno de México" style="max-height: 40px;">
+                    </td>
+                </tr>
+            </table>
+        </div>
+
+        <div class="content">
+            <h1>Restablecimiento de Credenciales</h1>
+
+            <p>Estimado/a <strong>{{mentor_nombre}}</strong>,</p>
+
+            <p>Se ha solicitado la generación de una nueva contraseña temporal para su acceso al portal de Mentores de
+                la Unidad Económica en el Sistema DUAL.</p>
+
+            <div class="info-details">
+                <p><strong>Usuario (Correo):</strong> {{mentor_email}}</p>
+                <p><strong>Nueva Contraseña Temporal:</strong> {{mentor_password}}</p>
+            </div>
+
+            <div class="alert-box">
+                <p style="margin: 0;"><strong>⚠️ Recordatorio de Privacidad:</strong> Le sugerimos acceder al portal y
+                    reemplazar esta clave por una de su preferencia para salvaguardar la información de los alumnos a su
+                    cargo.</p>
+            </div>
+
+            <!-- Bloque de Frase Inspiradora -->
+            <div class="inspirational-quote">
+                "La constancia asegura el dominio; redescubramos juntos el potencial de la práctica."
+            </div>
+        </div>
+
+        <!-- Pie de Página Fijo -->
+        <div class="footer">
+            <p>&copy; 2026 Tecnológico de Estudios Superiores de Ecatepec.</p>
+            <p><strong>COORDINACIÓN DE EDUCACIÓN DUAL</strong></p>
+            <p>Si tiene alguna pregunta, puede comunicarse a la coordinación de su carrera.</p>
+        </div>
+
+        <!-- Firma Techcoatl -->
+        <div class="techcoatl-signature">
+            SISTEMA DE GESTION EDUCACION DUAL CREADO POR TECHCOATL
+        </div>
+    </div>
+</body>
+
+</html>

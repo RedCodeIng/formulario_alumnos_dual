@@ -111,6 +111,41 @@ def render_registro():
     elif step == 2:
         st.subheader("Paso 2: Datos del Proyecto DUAL")
         
+        # Check if student already has a project to auto-fill (Re-enrollment flow)
+        user = st.session_state.get("user", {})
+        student_id = user.get("id")
+        
+        # We only auto-fill if project_data is completely empty to allow them to edit
+        if student_id and not st.session_state.get("project_data"):
+            # Get latest project
+            res_proj = supabase.table("proyectos_dual").select("*").eq("alumno_id", student_id).order("created_at", desc=True).limit(1).execute()
+            if res_proj.data:
+                old_proj = res_proj.data[0]
+                
+                # We need names
+                ue_name_str = ""
+                men_name_str = ""
+                if old_proj.get("ue_id"):
+                    res_n = supabase.table("unidades_economicas").select("nombre_comercial").eq("id", old_proj["ue_id"]).execute()
+                    if res_n.data: ue_name_str = res_n.data[0]["nombre_comercial"]
+                if old_proj.get("mentor_ue_id"):
+                    res_m = supabase.table("mentores_ue").select("nombre_completo").eq("id", old_proj["mentor_ue_id"]).execute()
+                    if res_m.data: men_name_str = res_m.data[0]["nombre_completo"]
+                
+                st.session_state["project_data"] = {
+                    "ue_id": old_proj.get("ue_id"),
+                    "mentor_ue_id": old_proj.get("mentor_ue_id"),
+                    "nombre_proyecto": old_proj.get("nombre_proyecto", ""),
+                    "descripcion_proyecto": old_proj.get("descripcion_proyecto", ""),
+                    "marco_teorico": old_proj.get("marco_teorico", ""),
+                    "fecha_inicio": datetime.strptime(old_proj["fecha_inicio_convenio"], "%Y-%m-%d").date() if old_proj.get("fecha_inicio_convenio") else date.today(),
+                    "fecha_fin": datetime.strptime(old_proj["fecha_fin_convenio"], "%Y-%m-%d").date() if old_proj.get("fecha_fin_convenio") else date.today(),
+                    "ue_name": ue_name_str,
+                    "mentor_ue_name": men_name_str
+                }
+                
+                st.info("💡 Hemos cargado la información de tu Proyecto DUAL anterior. Puedes actualizarla o dejarla igual.")
+        
         # Load Companies
         res_ue = supabase.table("unidades_economicas").select("id, nombre_comercial").execute()
         ues = res_ue.data if res_ue.data else []
@@ -139,6 +174,9 @@ def render_registro():
                 fecha_inicio = st.date_input("Fecha Inicio Convenio", value=st.session_state.get("project_data", {}).get("fecha_inicio", date.today()))
                 fecha_fin = st.date_input("Fecha Fin Convenio", value=st.session_state.get("project_data", {}).get("fecha_fin", date.today()))
         
+        descripcion_proyecto = st.text_area("Descripción del Proyecto", value=st.session_state.get("project_data", {}).get("descripcion_proyecto", ""))
+        marco_teorico = st.text_area("Marco Teórico / Justificación", value=st.session_state.get("project_data", {}).get("marco_teorico", ""))
+        
         # Validation Display
         if fecha_inicio and fecha_fin:
              if fecha_inicio == fecha_fin:
@@ -152,8 +190,6 @@ def render_registro():
                        st.success(f"Duración: {days} días (Aprox. 1 Año) ✅")
                   else:
                        st.warning(f"⚠️ **Atención:** La duración del convenio es de {days} días. (No es 1 año exacto).")
-
-        descripcion_proyecto = st.text_area("Descripción del Proyecto", value=st.session_state.get("project_data", {}).get("descripcion_proyecto", ""))
 
         c_nav1, c_nav2 = st.columns([1,1])
         if c_nav1.button("< Anterior", key="prev2"):
@@ -173,6 +209,7 @@ def render_registro():
                         "mentor_ue_id": mentor_id,
                         "nombre_proyecto": nombre_proyecto,
                         "descripcion_proyecto": descripcion_proyecto,
+                        "marco_teorico": marco_teorico,
                         "fecha_inicio": fecha_inicio,
                         "fecha_fin": fecha_fin,
                         "ue_name": selected_ue_name,
@@ -224,6 +261,7 @@ def render_registro():
             subject_id = subject_options.get(sel_subj_name)
             
             grupo = st.text_input("Grupo (Ej. 8101)")
+            actividades = st.text_area("Actividades que desarrollarás", help="Descripción breve de lo que harás en la empresa que sirva para evaluar esta materia.")
             
         with c2:
             filtered_teachers = []
@@ -271,6 +309,7 @@ def render_registro():
                       "grupo": grupo,
                       "asignatura_name": sel_subj_name, 
                       "maestro_name": sel_teacher_name,
+                      "actividades": actividades,
                       "p1": p1, "p2": p2, "p3": p3
                   })
                   st.success("Materia agregada.")
@@ -361,16 +400,22 @@ def render_registro():
                     try:
                         from src.utils.email_sender import send_confirmation_email
                         
+                        filas_html = ""
+                        for s in subjs:
+                            filas_html += f"<tr><td>{s.get('clave_asignatura', '')}</td><td>{s.get('asignatura_name', '')}</td><td>{s.get('maestro_name', '')}</td><td>{s.get('grupo', '')}</td></tr>"
+
                         email_data = {
-                            "nombre": f"{user.get('nombre')} {user.get('ap_paterno')}",
+                            "nombre_alumno": f"{user.get('nombre')} {user.get('ap_paterno')} {user.get('ap_materno', '')}".strip(),
                             "matricula": user.get("matricula"),
-                            "carrera": user.get("carrera"),
-                            "proyecto": proj.get("nombre_proyecto"),
-                            "ue": proj.get("ue_name"),
-                            "fecha_inicio": proj.get("fecha_inicio")
+                            "carrera": user.get("carrera", st.session_state.get("selected_career", "")),
+                            "correo_institucional": user.get("email_institucional"),
+                            "telefono": user.get("telefono", "N/A"),
+                            "empresa_sede": proj.get("ue_name", "N/A"),
+                            "mentor_ue_nombre": proj.get("mentor_ue_name", "Por asignar"),
+                            "filas_carga_academica": filas_html
                         }
                         
-                        sent = send_confirmation_email(user.get("email_personal"), email_data)
+                        sent = send_confirmation_email(user.get("email_institucional"), email_data)
                         if sent:
                             st.toast("Correo de confirmación enviado.", icon="📧")
                     except Exception as e:
