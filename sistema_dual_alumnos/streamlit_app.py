@@ -1,5 +1,18 @@
-
 import streamlit as st
+
+# MUST BE THE FIRST STREAMLIT COMMAND
+st.set_page_config(
+    page_title="Portal Alumnos DUAL",
+    page_icon="🎓",
+    layout="wide",
+    initial_sidebar_state="expanded",
+    menu_items={
+        'Get Help': None,
+        'Report a bug': None,
+        'About': "Portal Alumnos DUAL - EdoMex"
+    }
+)
+
 import sys
 import os
 

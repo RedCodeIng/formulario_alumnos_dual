@@ -16,18 +16,7 @@ from src.views.mentor_dashboard import render_mentor_dashboard
 from src.views.mentor_ie_dashboard import render_mentor_ie_dashboard
 from src.utils.ui import inject_custom_css, render_header
 
-# Page Configuration (Must be first)
-st.set_page_config(
-    page_title="Sistema de Gestión DUAL",
-    page_icon="🎓",
-    layout="wide",
-    initial_sidebar_state="collapsed",
-    menu_items={
-        'Get Help': None,
-        'Report a bug': None,
-        'About': "Sistema de Gestión DUAL - EdoMex"
-    }
-)
+
 
 def main():
     # 1. Inject Global CSS
