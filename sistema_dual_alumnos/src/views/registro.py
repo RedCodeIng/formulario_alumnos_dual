@@ -303,11 +303,26 @@ def render_registro():
              elif not sel_teacher_name or sel_teacher_name == "No hay maestros asignados a esta materia":
                   st.error("Seleccione un maestro válido.")
              else:
+                  # Extract Clave from the selected name string
+                  # Format is: "Clave - Nombre (Sem N)"
+                  clave_extract = ""
+                  nombre_extract = sel_subj_name
+                  
+                  if " - " in sel_subj_name:
+                      parts = sel_subj_name.split(" - ", 1)
+                      clave_extract = parts[0]
+                      
+                      # Remove the "(Sem N)" part if present for the clean name
+                      name_part = parts[1]
+                      import re
+                      nombre_extract = re.sub(r'\s*\(Sem\s*\d+\)', '', name_part).strip()
+                  
                   st.session_state["subjects_data"].append({
                       "asignatura_id": subject_id,
                       "maestro_id": teacher_options[sel_teacher_name],
                       "grupo": grupo,
-                      "asignatura_name": sel_subj_name, 
+                      "clave_asignatura": clave_extract,
+                      "asignatura_name": nombre_extract, 
                       "maestro_name": sel_teacher_name,
                       "actividades": actividades,
                       "p1": p1, "p2": p2, "p3": p3
@@ -319,10 +334,11 @@ def render_registro():
             st.markdown("##### Materias Inscritas")
             for idx, item in enumerate(st.session_state["subjects_data"]):
                 with st.container():
-                     cols = st.columns([3, 3, 1, 3])
-                     cols[0].write(f"**{item['asignatura_name']}**")
-                     cols[1].write(f"{item['maestro_name']}")
-                     cols[2].write(f"Gpo: {item['grupo']}")
+                     cols = st.columns([1, 3, 3, 1, 2])
+                     cols[0].write(f"**{item.get('clave_asignatura', '')}**")
+                     cols[1].write(f"{item['asignatura_name']}")
+                     cols[2].write(f"{item['maestro_name']}")
+                     cols[3].write(f"Gpo: {item['grupo']}")
                      partials = []
                      if item['p1']: partials.append("P1")
                      if item['p2']: partials.append("P2")
