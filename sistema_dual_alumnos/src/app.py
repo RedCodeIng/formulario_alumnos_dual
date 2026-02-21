@@ -12,6 +12,7 @@ from src.views.auth import render_login
 from src.views.dashboard import render_dashboard
 from src.views.student_dashboard import render_student_dashboard
 from src.views.registro import render_registro
+from src.views.mentor_dashboard import render_mentor_dashboard
 from src.utils.ui import inject_custom_css, render_header
 
 # Page Configuration (Must be first)
@@ -50,6 +51,8 @@ def main():
             render_student_dashboard()
         elif role == "student_register":
             render_registro()
+        elif role == "mentor_ue":
+            render_mentor_dashboard()
         else:
             st.error("Rol desconocido. Contacte al administrador.")
 

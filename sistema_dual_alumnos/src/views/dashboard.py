@@ -1,166 +1,185 @@
-
 import streamlit as st
 from src.components.cards import get_card_html
 from src.db_connection import get_supabase_client
 import pandas as pd
-from src.utils.assignment import assign_mentors_round_robin
+import re
 
 def render_dashboard():
-    st.title("Panel de Control - Coordinador DUAL")
+    st.title("Panel de Control - Alumno DUAL")
     st.markdown("---")
+    
+    user = st.session_state.get("user", {})
+    estatus = user.get("estatus", "No definido")
     
     # KPI Cards Row
-    col1, col2, col3, col4 = st.columns(4)
+    col1, col2, col3 = st.columns(3)
     
     with col1:
-        st.markdown(get_card_html("Alumnos Registrados", "50", "fas fa-user-graduate"), unsafe_allow_html=True)
+        st.markdown(get_card_html("Estatus DUAL", estatus, "fas fa-info-circle"), unsafe_allow_html=True)
     with col2:
-        st.markdown(get_card_html("Empresas Activas", "12", "fas fa-building", color="#a48857"), unsafe_allow_html=True)
+        st.markdown(get_card_html("Semestre", user.get("semestre", "N/A"), "fas fa-calendar", color="#a48857"), unsafe_allow_html=True)
     with col3:
-        st.markdown(get_card_html("Mentores IE", "8", "fas fa-chalkboard-teacher"), unsafe_allow_html=True)
-    with col4:
-        st.markdown(get_card_html("Documentos Gen.", "150", "fas fa-file-alt", color="#a48857"), unsafe_allow_html=True)
+         # Project info fetch
+         supabase = get_supabase_client()
+         res_p = supabase.table("proyectos_dual").select("nombre_proyecto").eq("alumno_id", user.get("id")).execute()
+         p_name = res_p.data[0]["nombre_proyecto"] if res_p.data else "Sin Proyecto"
+         st.markdown(get_card_html("Proyecto Activo", p_name[:20] + "..." if len(p_name)>20 else p_name, "fas fa-project-diagram"), unsafe_allow_html=True)
+         
 
     st.markdown("---")
     
-    tab_alumnos, tab1, tab2, tab3, tab4 = st.tabs(["Alumnos DUAL", "Asignaturas", "Maestros", "Unidades Económicas", "Operaciones Académicas"])
+    # Tabs for student
+    tab_docs, tab_academic, tab_profile = st.tabs(["Mis Documentos", "Carga Académica", "Mi Perfil"])
     
-    supabase = get_supabase_client()
-    
-    with tab_alumnos:
-        st.header("Listado Maestro de Alumnos")
+    with tab_docs:
+        # Placeholder for documents
+        st.header("Documentación DUAL")
+        st.info("Aquí podrás descargar y subir tus formatos (Anexo 5.1, Carta de Asignación, Reportes Bimestrales).")
+        # File uploader demo
         
-        # Load Students joined with Projects and Mentors IE
-        # Supabase join syntax: select(*, proyectos_dual(*))
-        # For simplicity, we fetch tables independently and merge in pandas if needed, or use specific query
-        res_alumnos = supabase.table("alumnos").select("*").execute()
+        uploaded_file = st.file_uploader("Subir Reporte Bimestral (PDF)")
+        if uploaded_file is not None:
+             st.success("Archivo subido correctamente (Simulación).")
+             
+    with tab_academic:
+        st.header("Carga Académica")
         
-        if res_alumnos.data:
-            df_alumnos = pd.DataFrame(res_alumnos.data)
+        student_id = user.get("id")
+        selected_career_id = user.get("carrera_id")
+        
+        # 1. Fetch CURRENT Subjects
+        st.markdown("### Materias Inscritas Actuales")
+        try:
+            res_insc = supabase.table("inscripciones_asignaturas").select(
+                "id, grupo, asignaturas(clave_asignatura, nombre, semestre), maestros(nombre_completo)"
+            ).eq("alumno_id", student_id).execute()
             
-            # Allow basic filtering
-            st.dataframe(
-                df_alumnos, 
-                column_config={
-                    "matricula": "Matrícula",
-                    "nombre": "Nombre",
-                    "ap_paterno": "Apellido P.",
-                    "carrera": "Carrera",
-                    "email_institucional": "Email"
-                },
-                hide_index=True,
-                use_container_width=True
-            )
+            if res_insc.data:
+                data_rows = []
+                for item in res_insc.data:
+                    asign = item.get('asignaturas', {})
+                    docente = item.get('maestros', {})
+                    data_rows.append({
+                        "id_inscripcion": item['id'],
+                        "Clave": asign.get('clave_asignatura'),
+                        "Asignatura": asign.get('nombre'),
+                        "Semestre": asign.get('semestre'),
+                        "Grupo": item.get('grupo'),
+                        "Docente": docente.get('nombre_completo', 'Sin Asignar')
+                    })
+                
+                # Display current subjects with delete option
+                for row in data_rows:
+                    col_info, col_del = st.columns([5, 1])
+                    col_info.write(f"**{row['Asignatura']}** ({row['Clave']}) - Gpo: {row['Grupo']} | *{row['Docente']}*")
+                    if col_del.button("❌ Eliminar", key=f"del_subj_{row['id_inscripcion']}"):
+                         try:
+                             supabase.table("inscripciones_asignaturas").delete().eq("id", row['id_inscripcion']).execute()
+                             st.success("Materia eliminada.")
+                             st.rerun()
+                         except Exception as e:
+                             st.error(f"Error al eliminar materia: {e}")
+                    st.divider()
+
+            else:
+                st.info("No hay asignaturas inscritas actualmente.")
+        except Exception as e:
+            st.error(f"Error al cargar carga académica: {e}")
             
-            st.info("Selecciona un alumno para ver sus detalles completos (En desarrollo: Vista Detallada).")
-        else:
-            st.info("No hay alumnos registrados aún.")
+        st.markdown("---")
+        st.markdown("### Agregar Nueva Asignatura")
+        
+        # 2. Re-use Registro Logic for Adding Subjects
+        c_filter1, c_filter2 = st.columns(2)
+        with c_filter1:
+            st.write(f"**Carrera:** {user.get('carrera', 'N/A')}")
+        with c_filter2:
+            sem_options = ["Todos", "6", "7", "8", "9"]
+            current_sem = user.get("semestre", "6")
+            default_index = sem_options.index(current_sem) if current_sem in sem_options else 0
+            selected_sem_filter = st.selectbox("Filtrar Materias por Semestre", sem_options, index=default_index, key="add_subj_sem")
 
-    with tab1:
-        st.header("Gestión de Asignaturas")
-        
-        # Load Subjects
-        response = supabase.table("asignaturas").select("*").execute()
-        df_subjects = pd.DataFrame(response.data) if response.data else pd.DataFrame(columns=["clave_asignatura", "nombre", "carrera"])
-        
-        # Editable Dataframe
-        edited_df = st.data_editor(df_subjects, num_rows="dynamic", key="subjects_editor")
-        
-        if st.button("Guardar Cambios Asignaturas"):
-            st.warning("Funcionalidad de guardado masivo en desarrollo.")
-        
-    with tab2:
-        st.header("Gestión de Maestros")
-        
-        with st.expander("Registrar Nuevo Maestro"):
-            with st.form("new_teacher"):
-                clave = st.text_input("Clave Maestro")
-                nombre = st.text_input("Nombre Completo")
-                email = st.text_input("Email Institucional")
-                es_mentor = st.checkbox("¿Es Mentor IE?")
-                division = st.selectbox("División", ["Sistemas", "Industrial", "Mecánica", "Gestión Empresarial"])
-                
-                submitted = st.form_submit_button("Registrar")
-                if submitted:
-                    new_teacher = {
-                        "clave_maestro": clave,
-                        "nombre_completo": nombre,
-                        "email_institucional": email,
-                        "es_mentor_ie": es_mentor
-                    }
-                    try:
-                        res = supabase.table("maestros").insert(new_teacher).execute()
-                        st.success("Maestro registrado correctamente.")
-                    except Exception as e:
-                        st.error(f"Error: {e}")
+        query = supabase.table("asignaturas").select("id, nombre, clave_asignatura, semestre")
+        if selected_career_id:
+             query = query.eq("carrera_id", selected_career_id)
+        if selected_sem_filter != "Todos":
+            query = query.eq("semestre", selected_sem_filter)
 
-        # List Teachers
-        res_teachers = supabase.table("maestros").select("*").execute()
-        if res_teachers.data:
-            st.dataframe(res_teachers.data, use_container_width=True)
-        
-    with tab3:
-        st.header("Directorio de Unidades Económicas (Empresas)")
-        
-        with st.expander("Registrar Nueva UE"):
-            with st.form("new_ue"):
-                nombre_com = st.text_input("Nombre Comercial")
-                razon = st.text_input("Razón Social")
-                rfc = st.text_input("RFC")
-                direccion = st.text_input("Dirección Fiscal")
-                
-                submitted_ue = st.form_submit_button("Registrar Empresa")
-                if submitted_ue:
-                    new_ue = {
-                        "nombre_comercial": nombre_com,
-                        "razon_social": razon,
-                        "rfc": rfc,
-                        "direccion": direccion
-                    }
-                    try:
-                        supabase.table("unidades_economicas").insert(new_ue).execute()
-                        st.success("Empresa registrada.")
-                    except Exception as e:
-                        st.error(f"Error: {e}")
-        
-        # Load UEs
-        res_ues = supabase.table("unidades_economicas").select("*").execute()
-        if res_ues.data:
-            st.dataframe(res_ues.data, use_container_width=True)
+        res_subjects = query.execute()
+        subjects = res_subjects.data if res_subjects.data else []
+        subject_options = {f"{s['clave_asignatura']} - {s['nombre']} (Sem {s['semestre']})": s["id"] for s in subjects}
 
-    with tab4:
-        st.header("Operaciones Académicas (Automatización)")
-        
-        col_ops1, col_ops2 = st.columns(2)
-        
-        with col_ops1:
-            st.subheader("Asignación de Mentores IE")
-            st.write("Asignar mentores académicos automáticamente usando Round Robin.")
-            
-            if st.button("Ejecutar Asignación Automática"):
-                with st.spinner("Asignando mentores..."):
-                    success, msg = assign_mentors_round_robin()
-                    if success:
-                        st.success(msg)
-                    else:
-                        st.error(f"Error: {msg}")
+        with st.form("add_subject_form"):
+            c1, c2 = st.columns(2)
+            with c1:
+                sel_subj_name = st.selectbox("Asignatura", list(subject_options.keys()) if subjects else ["No hay asignaturas"])
+                subject_id = subject_options.get(sel_subj_name)
+                grupo = st.text_input("Grupo (Ej. 8101)")
+                
+            with c2:
+                filtered_teachers = []
+                if subject_id:
+                    res_rels = supabase.table("rel_maestros_asignaturas").select("maestro_id").eq("asignatura_id", subject_id).execute()
+                    teacher_ids = [r["maestro_id"] for r in res_rels.data] if res_rels.data else []
+                    
+                    if teacher_ids:
+                        res_teachers = supabase.table("maestros").select("id, clave_maestro, nombre_completo").in_("id", teacher_ids).execute()
+                        filtered_teachers = res_teachers.data if res_teachers.data else []
+                
+                if filtered_teachers:
+                    cleaned_options = {}
+                    for t in filtered_teachers:
+                        raw_name = t['nombre_completo']
+                        clean_name = re.sub(r'\s*\([^)]*\)', '', raw_name).strip()
+                        display_str = f"{t['clave_maestro']} - {clean_name}"
+                        cleaned_options[display_str] = t["id"]
+                    teacher_options = cleaned_options
+                else:
+                     teacher_options = {}
 
-        with col_ops2:
-            st.subheader("Generación Masiva de Documentos")
-            st.write("Generar Anexo 5.1 y Carta de Asignación para todos los alumnos asignados y enviar por correo.")
-            
-            if st.button("Generar y Enviar Documentación"):
-                st.info("Iniciando proceso por lotes (Demo)...")
+                sel_teacher_name = st.selectbox(
+                    "Maestro (Docente)", 
+                    list(teacher_options.keys()) if teacher_options else ["No hay maestros asignados a esta materia"]
+                )
                 
-                # Demo logic to simulate generation and sending
-                # In real scenario, we would iterate over assigned students
-                
-                progress_bar = st.progress(0)
-                import time
-                
-                # Simulated steps
-                for i in range(100):
-                    time.sleep(0.05)
-                    progress_bar.progress(i + 1)
-                
-                st.success("Proceso completado.")
+                st.write("Parciales a Cursar:")
+                col_chk1, col_chk2, col_chk3 = st.columns(3)
+                with col_chk1: p1 = st.checkbox("Parcial 1", value=True)
+                with col_chk2: p2 = st.checkbox("Parcial 2", value=True)
+                with col_chk3: p3 = st.checkbox("Parcial 3", value=True)
+
+            submitted_add = st.form_submit_button("Agregar Materia")
+            if submitted_add:
+                 if not grupo:
+                      st.error("Ingrese el grupo.")
+                 elif not sel_teacher_name or sel_teacher_name == "No hay maestros asignados a esta materia":
+                      st.error("Seleccione un maestro válido.")
+                 else:
+                      try:
+                          # Check if already enrolled
+                          check_res = supabase.table("inscripciones_asignaturas").select("id").eq("alumno_id", student_id).eq("asignatura_id", subject_id).execute()
+                          if (check_res.data):
+                               st.error("Ya está inscrito en esta materia.")
+                          else:
+                               supabase.table("inscripciones_asignaturas").insert({
+                                   "alumno_id": student_id,
+                                   "asignatura_id": subject_id,
+                                   "maestro_id": teacher_options[sel_teacher_name],
+                                   "grupo": grupo,
+                                   "parcial_1": p1,
+                                   "parcial_2": p2,
+                                   "parcial_3": p3
+                               }).execute()
+                               st.success("Materia inscrita exitosamente.")
+                               st.rerun()
+                      except Exception as e:
+                          st.error(f"Error al inscribir materia: {e}")
+
+    with tab_profile:
+        st.header("Mi Perfil")
+        # Show read-only profile info
+        c1, c2 = st.columns(2)
+        c1.text_input("Nombre Completo", value=f"{user.get('nombre')} {user.get('ap_paterno')} {user.get('ap_materno')}", disabled=True)
+        c2.text_input("Matrícula", value=user.get("matricula"), disabled=True)
+        c1.text_input("Correo Institucional", value=user.get("email_institucional"), disabled=True)
+        c2.text_input("Carrera", value=user.get("carrera"), disabled=True)

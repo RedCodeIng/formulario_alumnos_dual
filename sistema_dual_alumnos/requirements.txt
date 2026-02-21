@@ -1,5 +1,9 @@
 streamlit
 supabase
 pandas
-python-docx
 python-dotenv
+xhtml2pdf
+python-docx
+docxtpl
+docx2pdf
+matplotlib

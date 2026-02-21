@@ -22,13 +22,14 @@ def get_login_css():
         }
         .login-card {
             background-color: #ffffff;
-            padding: 2.5rem;
+            padding: 1.5rem;
             border-radius: 8px; /* Slightly sharper corners */
             box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1); /* Deeper shadow */
             width: 100%;
-            max-width: 450px;
+            box-sizing: border-box;
             text-align: center;
             border-top: 6px solid var(--primary); /* Use global variable */
+            margin-bottom: 1rem;
         }
         .login-header {
             color: var(--primary) !important;
@@ -48,21 +49,29 @@ def get_login_css():
         }
         .logo-row {
             display: flex;
-            justify-content: center;
+            justify-content: space-between;
             align-items: center;
-            gap: 20px;
+            gap: 15px;
             margin-bottom: 25px;
             width: 100%;
+            padding: 0;
+            box-sizing: border-box;
         }
         .logo-img-login {
-            height: 55px; /* TESE and EdoMex slightly smaller */
-            width: auto;
+            height: auto;
+            max-height: 65px; /* TESE and EdoMex maximum size */
+            max-width: 48%; /* Ensure they don't overflow the container */
             object-fit: contain;
         }
-        .logo-img-dual {
-            height: 90px; /* Dual Logo larger and central */
-            width: auto;
-            object-fit: contain;
+        
+        /* Mobile Responsiveness for Logos */
+        @media (max-width: 400px) {
+            .logo-img-login {
+                max-height: 50px;
+            }
+            .logo-row {
+                gap: 10px;
+            }
         }
     </style>
     """
@@ -77,17 +86,14 @@ def get_login_header():
     # Load Real Images
     logo_tese = load_image_as_base64(os.path.join(base_path, "logo_institucional_tese.png"))
     logo_edomex = load_image_as_base64(os.path.join(base_path, "logo_estado_mexico.png"))
-    logo_dual = load_image_as_base64(os.path.join(base_path, "logo_dual_sistema.png"))
     
     img_tese = f'<img src="{logo_tese}" class="logo-img-login">' if logo_tese else ''
     img_edomex = f'<img src="{logo_edomex}" class="logo-img-login">' if logo_edomex else ''
-    img_dual = f'<img src="{logo_dual}" class="logo-img-dual">' if logo_dual else ''
 
     return f"""
     <div class="login-card">
         <div class="logo-row">
             {img_tese}
-            {img_dual}
             {img_edomex}
         </div>
         <div class="login-header">Portal de Alumnos DUAL</div>

@@ -2,6 +2,8 @@ version: '3.8'
 
 services:
   app:
+    container_name: alumnos_app
+    image: alumnos_app:latest
     build: .
     ports:
       - "8502:8501"

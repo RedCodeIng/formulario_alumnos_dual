@@ -10,6 +10,12 @@ RUN apt-get update && apt-get install -y \
     libpq-dev \
     gcc \
     curl \
+    libcairo2-dev \
+    pkg-config \
+    python3-dev \
+    libffi-dev \
+    zlib1g-dev \
+    libjpeg-dev \
     && rm -rf /var/lib/apt/lists/*
 
 # Set timezone

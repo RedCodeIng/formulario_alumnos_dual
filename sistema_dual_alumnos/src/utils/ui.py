@@ -155,6 +155,22 @@ def inject_custom_css():
             background-color: #f2f2f2;
         }
 
+        /* TABS (PESTAÑAS) */
+        button[data-baseweb="tab"] {
+            font-size: 1.25rem !important; /* Larger text */
+            padding-top: 1rem !important;
+            padding-bottom: 1rem !important;
+            padding-left: 1.5rem !important;
+            padding-right: 1.5rem !important;
+            font-weight: 500 !important;
+        }
+        button[data-baseweb="tab"] div[data-testid="stMarkdownContainer"] p {
+            font-size: 1.25rem !important; /* Force text inside tab to be larger */
+        }
+        div[data-baseweb="tab-list"] {
+            gap: 15px; /* Spacing between tabs */
+        }
+
         /* MOBILE RESPONSIVENESS */
         @media (max-width: 768px) {
             .custom-header {
@@ -162,10 +178,33 @@ def inject_custom_css():
                 gap: 10px;
             }
             .logo-img {
-                max-height: 60px;
+                max-height: 50px;
             }
             .title-box h1 {
-                font-size: 20px;
+                font-size: 18px;
+            }
+            
+            /* Responsive Tabs for Mobile */
+            button[data-baseweb="tab"] {
+                font-size: 1rem !important;
+                padding-left: 0.8rem !important;
+                padding-right: 0.8rem !important;
+            }
+            button[data-baseweb="tab"] div[data-testid="stMarkdownContainer"] p {
+                font-size: 1rem !important;
+            }
+            div[data-baseweb="tab-list"] {
+                gap: 5px;
+                flex-wrap: wrap; /* Ensure tabs wrap if they do not fit */
+            }
+            
+            /* Make columns stack on mobile */
+            div[data-testid="stHorizontalBlock"] {
+                flex-direction: column !important;
+            }
+            div[data-testid="stHorizontalBlock"] > div {
+                width: 100% !important;
+                margin-bottom: 15px;
             }
         }
     </style>
