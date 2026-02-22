@@ -1,7 +1,6 @@
-
-import streamlit as st
 import sys
 import os
+import streamlit as st
 
 # Fix for Streamlit Cloud path resolution
 # Adds the parent directory of 'src' to sys.path so 'src.views' can be imported
@@ -19,6 +18,19 @@ from src.utils.ui import inject_custom_css, render_header
 
 
 def main():
+    # MUST BE THE FIRST STREAMLIT COMMAND
+    st.set_page_config(
+        page_title="Sistema de Gestión DUAL",
+        page_icon="🎓",
+        layout="wide",
+        initial_sidebar_state="collapsed",
+        menu_items={
+            'Get Help': None,
+            'Report a bug': None,
+            'About': "Sistema de Gestión DUAL - EdoMex"
+        }
+    )
+
     # 1. Inject Global CSS
     inject_custom_css()
     
