@@ -403,10 +403,14 @@ def render_registro():
         for s in subjs:
              st.markdown(f"| {s['asignatura_name']} | {s['maestro_name']} | {s['grupo']} |")
 
-        if st.button("Confirmar y Enviar Registro"):
-            with st.spinner("Guardando registro en sistema..."):
-                # Attempt transaction
-                success, msg = create_student_transaction(user, proj, subjs)
+        if st.button("Confirmar y Enviar Registro", key="btn_confirm_reg"):
+            if st.session_state.get("is_registering", False):
+                st.warning("Procesando su registro, por favor espere...")
+            else:
+                st.session_state["is_registering"] = True
+                with st.spinner("Guardando registro en sistema..."):
+                    # Attempt transaction
+                    success, msg = create_student_transaction(user, proj, subjs)
                 if success:
                     st.balloons()
                     st.success("¡Registro completado exitosamente y datos actualizados!")
@@ -445,9 +449,10 @@ def render_registro():
                     
                     import time
                     time.sleep(2)
-                    st.rerun()
+                    st.session_state["is_registering"] = False
                 else:
                     st.error(f"Error al guardar: {msg}")
+                    st.session_state["is_registering"] = False
         
         if st.button("< Corregir"):
              st.session_state["registro_step"] = 3
