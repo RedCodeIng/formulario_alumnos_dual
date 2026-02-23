@@ -76,6 +76,13 @@ def create_student_transaction(student_data, project_data, subjects_data):
         supabase.table("proyectos_dual").upsert(project_record, on_conflict="alumno_id, periodo_id").execute()
 
         # 3. Register Subjects
+        # Prevent duplicates on double-click by clearing previous enrollments for this period
+        supabase.table("inscripciones_asignaturas") \
+            .delete() \
+            .eq("alumno_id", student_id) \
+            .eq("periodo_id", period_id) \
+            .execute()
+            
         subjects_records = []
         for subject in subjects_data:
             subjects_records.append({

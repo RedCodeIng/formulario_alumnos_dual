@@ -183,64 +183,14 @@ def render_evaluation_form():
                      supabase.table("proyectos_dual").update({"calificacion_ue": average}).eq("id", project_id).execute()
                      st.success(f"Evaluación guardada exitosamente. Promedio preliminar: {average}%")
                      
-                     with st.spinner("Generando Anexo 5.4 Oficial y notificando al estudiante..."):
-                         import sys
-                         import os
-                         import tempfile
-                         import time
-                         
-                         root_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
-                         if root_dir not in sys.path:
-                             sys.path.insert(0, root_dir)
-                             
-                         try:
-                             from sistema_dual.src.utils.anexo_data import get_anexo_5_4_data
-                             from sistema_dual.src.utils.pdf_generator_docx import generate_docx_document
-                             from sistema_dual.src.utils.notifications import send_email
-                             
-                             data, _ = get_anexo_5_4_data(student_id)
-                             if data:
-                                 tmp_dir = os.path.join(tempfile.gettempdir(), f"dual_auto_{student_id}_{int(time.time())}")
-                                 os.makedirs(tmp_dir, exist_ok=True)
-                                 
-                                 docx_path = os.path.join(tmp_dir, f"Anexo_5.4_Final_{alumno.get('matricula', '')}.docx")
-                                 t_path = os.path.join(root_dir, "sistema_dual", "src", "templates", "docs", "Anexo_5.4_Reporte_de_Actividades.docx")
-                                 
-                                 suc, _ = generate_docx_document("Anexo_5.4_Reporte_de_Actividades.docx", data, docx_path, t_path)
-                                 
-                                 if suc and os.path.exists(docx_path):
-                                     mentor_name = mentor.get('nombre_completo', 'Mentor')
-                                     student_name = f"{alumno.get('nombre')} {alumno.get('ap_paterno')}"
-                                     student_email = alumno.get('email_institucional') or alumno.get('email_personal')
-                                     
-                                     ctx_student = {
-                                         "title": "Evaluación Empresarial Recibida",
-                                         "message": f"""
-                                         <p>Hola <strong>{student_name}</strong>,</p>
-                                         <p>Tu Mentor en la Unidad Económica (<strong>{mentor_name}</strong>) concluyó exitosamente tu evaluación práctica correspondiente al 70% de tu calificación DUAL.</p>
-                                         <p>Adjuntamos el <strong>Anexo 5.4 Oficial</strong> para tus registros o portafolio de evidencias.</p>
-                                         """
-                                     }
-                                     ctx_mentor = {
-                                         "title": "Registro de Evaluación Confirmado",
-                                         "message": f"""
-                                         <p>Estimado/a <strong>{mentor_name}</strong>,</p>
-                                         <p>Gracias por calificar el desempeño del estudiante <strong>{student_name}</strong>.</p>
-                                         <p>El sistema ha enlazado automáticamente estos puntajes y generado el <strong>Anexo 5.4</strong> adjunto para los archivos de la Universidad.</p>
-                                         <p>La Coordinación le agradece su valioso apoyo e integración en el programa DUAL.</p>
-                                         """
-                                     }
-                                     
-                                     if student_email:
-                                         send_email(student_email, "Resultados Evaluación Empresarial DUAL (Anexo 5.4)", "base_notification.html", ctx_student, [docx_path])
-                                     
-                                     send_email(mentor.get('email', ''), "Confirmación de Evaluación al Estudiante", "base_notification.html", ctx_mentor, [docx_path])
-                                     
-                                     # Mark as synced so coordinator dashboard clears it from the pending list
-                                     supabase.table("proyectos_dual").update({"anexo_54_enviado": True}).eq("id", project_id).execute()
-                                     st.success("Anexo 5.4 generado y notificaciones enviadas correctamente.")
-                         except Exception as inner_e:
-                             st.error(f"Se guardó la calificación pero no se pudo generar el Anexo Automático: {inner_e}")
+                     st.info("La evaluación ha sido enviada a la Coordinación DUAL. El documento oficial será generado y enviado a su correo en los próximos días hábiles.")
+                     
+                     # Deselect the student after evaluation
+                     import time
+                     time.sleep(3)
+                     del st.session_state["evaluating_student_id"]
+                     del st.session_state["eval_project_id"]
+                     st.rerun()
 
                  except Exception as e:
                      st.error(f"Error al guardar calificación en base de datos: {e}")
