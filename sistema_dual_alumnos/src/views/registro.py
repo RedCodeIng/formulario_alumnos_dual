@@ -314,7 +314,6 @@ def render_registro():
                       
                       # Remove the "(Sem N)" part if present for the clean name
                       name_part = parts[1]
-                      import re
                       nombre_extract = re.sub(r'\s*\(Sem\s*\d+\)', '', name_part).strip()
                   
                   st.session_state["subjects_data"].append({
